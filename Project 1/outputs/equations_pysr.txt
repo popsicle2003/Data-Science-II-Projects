@@ -1,0 +1,114 @@
+
+====================================================================================================
+PySR equations + feature maps
+====================================================================================================
+
+
+autompg | mpg | PySR best equation:
+complexity                                                      10
+loss                                                      9.256084
+equation         square(3.191794 + ((0.4597559 * x5) - x3)) + 1...
+score                                                     0.162936
+sympy_format        (-x3 + 0.4597559*x5 + 3.191794)**2 + 11.921249
+lambda_format    PySRFunction(X=>(-x3 + 0.4597559*x5 + 3.191794...
+Name: 7, dtype: object
+
+Feature map (PySR variable -> original feature):
+[saved] outputs\feature_maps\feature_map_autompg_mpg_pysr.csv
+  x0 -> cylinders
+  x1 -> displacement
+  x2 -> horsepower
+  x3 -> weight
+  x4 -> acceleration
+  x5 -> model_year
+  x6 -> origin_1
+  x7 -> origin_2
+  x8 -> origin_3
+----------------------------------------------------------------------------------------------------
+
+house | House_Price | PySR best equation:
+complexity                                                      17
+loss                                                   127342456.0
+equation         (((((x3 + x4) + x1) * 18146.273) + 618576.06) ...
+score                                                     0.186885
+sympy_format     x0*250156.47 + x2*6704.8105 + (x1 + x3 + x4)*1...
+lambda_format    PySRFunction(X=>x0*250156.47 + x2*6704.8105 + ...
+Name: 14, dtype: object
+
+Feature map (PySR variable -> original feature):
+[saved] outputs\feature_maps\feature_map_house_House_Price_pysr.csv
+  x0 -> Square_Footage
+  x1 -> Num_Bedrooms
+  x2 -> Num_Bathrooms
+  x3 -> Year_Built
+  x4 -> Lot_Size
+  x5 -> Garage_Size
+  x6 -> Neighborhood_Quality
+----------------------------------------------------------------------------------------------------
+
+parkinsons | total_UPDRS | PySR best equation:
+complexity                                         4
+loss                                       12.660934
+equation                       square(x4 + 5.290253)
+score                                       2.026149
+sympy_format                      (x4 + 5.290253)**2
+lambda_format    PySRFunction(X=>(x4 + 5.290253)**2)
+Name: 2, dtype: object
+
+Feature map (PySR variable -> original feature):
+[saved] outputs\feature_maps\feature_map_parkinsons_total_UPDRS_pysr.csv
+  x0 -> subject#
+  x1 -> age
+  x2 -> sex
+  x3 -> test_time
+  x4 -> motor_UPDRS
+  x5 -> Jitter(%)
+  x6 -> Jitter(Abs)
+  x7 -> Jitter:RAP
+  x8 -> Jitter:PPQ5
+  x9 -> Jitter:DDP
+  x10 -> Shimmer
+  x11 -> Shimmer(dB)
+  x12 -> Shimmer:APQ3
+  x13 -> Shimmer:APQ5
+  x14 -> Shimmer:APQ11
+  x15 -> Shimmer:DDA
+  x16 -> NHR
+  x17 -> HNR
+  x18 -> RPDE
+  x19 -> DFA
+  x20 -> PPE
+----------------------------------------------------------------------------------------------------
+
+parkinsons | motor_UPDRS | PySR best equation:
+complexity                                               5
+loss                                              6.870167
+equation                      (x4 * 7.7303534) + 21.332644
+score                                             0.588178
+sympy_format                      x4*7.7303534 + 21.332644
+lambda_format    PySRFunction(X=>x4*7.7303534 + 21.332644)
+Name: 3, dtype: object
+
+Feature map (PySR variable -> original feature):
+[saved] outputs\feature_maps\feature_map_parkinsons_motor_UPDRS_pysr.csv
+  x0 -> subject#
+  x1 -> age
+  x2 -> sex
+  x3 -> test_time
+  x4 -> total_UPDRS
+  x5 -> Jitter(%)
+  x6 -> Jitter(Abs)
+  x7 -> Jitter:RAP
+  x8 -> Jitter:PPQ5
+  x9 -> Jitter:DDP
+  x10 -> Shimmer
+  x11 -> Shimmer(dB)
+  x12 -> Shimmer:APQ3
+  x13 -> Shimmer:APQ5
+  x14 -> Shimmer:APQ11
+  x15 -> Shimmer:DDA
+  x16 -> NHR
+  x17 -> HNR
+  x18 -> RPDE
+  x19 -> DFA
+  x20 -> PPE
