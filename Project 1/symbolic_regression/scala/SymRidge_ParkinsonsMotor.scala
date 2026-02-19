@@ -13,7 +13,7 @@ import scala.collection.mutable.LinkedHashSet
   val y  = xy(0 until m, n-1)
 
   val fname: Array[String] = null
-  val powers: LinkedHashSet[Double] = LinkedHashSet(2.0, 0.5)
+  val powers: LinkedHashSet[Double] = LinkedHashSet(2.0)
 
   val mod: RidgeRegression =
     SymRidgeRegression(x, y, fname, powers, cross = true, cross3 = false, RidgeRegression.hp)
