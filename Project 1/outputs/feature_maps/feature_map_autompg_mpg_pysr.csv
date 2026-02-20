@@ -1,0 +1,10 @@
+x,feature_name
+x0,cylinders
+x1,displacement
+x2,horsepower
+x3,weight
+x4,acceleration
+x5,model_year
+x6,origin_1
+x7,origin_2
+x8,origin_3

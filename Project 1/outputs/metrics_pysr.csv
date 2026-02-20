@@ -1,0 +1,5 @@
+dataset,target,language,model,r2,rmse,mae,plot_path,feature_map_path
+autompg,mpg,python,PySR,0.8817967611474844,2.520985480488056,1.8138842862555506,outputs\plots\autompg_mpg_pysr_pred_vs_actual.png,outputs\feature_maps\feature_map_autompg_mpg_pysr.csv
+house,House_Price,python,PySR,0.997833249106395,11818.049170328684,9454.019378644265,outputs\plots\house_House_Price_pysr_pred_vs_actual.png,outputs\feature_maps\feature_map_house_House_Price_pysr.csv
+parkinsons,motor_UPDRS,python,PySR,0.8987000471794662,2.5428129246783024,1.9771224900927413,outputs\plots\parkinsons_motor_UPDRS_pysr_pred_vs_actual.png,outputs\feature_maps\feature_map_parkinsons_motor_UPDRS_pysr.csv
+parkinsons,total_UPDRS,python,PySR,0.8944843864707851,3.4194306913646906,2.6537881712460165,outputs\plots\parkinsons_total_UPDRS_pysr_pred_vs_actual.png,outputs\feature_maps\feature_map_parkinsons_total_UPDRS_pysr.csv
