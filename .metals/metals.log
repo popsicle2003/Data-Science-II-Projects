@@ -273,3 +273,8 @@ WARNING: Unmatched cancel notification for request id 60
 2026.02.19 12:12:45 INFO  empty definition using pc, found symbol in pc:  (full report at: "C:\Users\legok\Documents\GitHub\Data-Science-II-Projects\.metals\.reports\metals-full\2026-02-19\r_empty-definition_(Data-Science-II-Projects_5fd5c0a6989e)_12-12-45-308.md")
 2026.02.19 12:12:45 INFO  compiling data-science-ii-projects_d5c0a6989e (4 scala sources)
 2026.02.19 12:12:45 INFO  time: compiled Data-Science-II-Projects_d5c0a6989e in 0.21s
+2026.03.23 11:11:00 INFO  Started: Metals version 1.6.6 in folders 'C:\Users\legok\Documents\GitHub\Data-Science-II-Projects' for client Visual Studio Code 1.112.0.
+2026.03.23 11:11:00 INFO  Memory monitor started
+2026.03.23 11:11:05 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
+2026.03.23 11:11:05 WARN  no build tool detected in workspace 'C:\Users\legok\Documents\GitHub\Data-Science-II-Projects'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
+2026.03.23 11:11:05 WARN  Build server is not auto-connectable.
