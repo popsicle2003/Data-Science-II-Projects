@@ -1,2 +1,3 @@
 /.metals
 .metals/metals.lock.db
+/.venv

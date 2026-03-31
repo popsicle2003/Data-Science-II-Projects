@@ -25,9 +25,14 @@ RANDOM_SEED = 42
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
 
-AUTO_MPG_PATH = REPO_ROOT / "Project 1" / "Raw Datasets" / "auto-mpg" / "auto-mpg.data-original"
-HOUSE_PATH = REPO_ROOT / "Project 1" / "Raw Datasets" / "house_price_regression_dataset" / "house_price_regression_dataset.csv"
-PARK_PATH = REPO_ROOT / "Project 1" / "Raw Datasets" / "parkinsons_telemonitoring" / "parkinsons_updrs.data"
+PROJECT2_DATA_DIR = REPO_ROOT / "Project 2" / "Raw Datasets"
+
+AUTO_MPG_PATH = PROJECT2_DATA_DIR / "auto-mpg" / "auto-mpg.data-original"
+HOUSE_PATH = PROJECT2_DATA_DIR / "house_price_regression_dataset" / "house_price_regression_dataset.csv"
+PARK_PATH_CANDIDATES = (
+    PROJECT2_DATA_DIR / "parkinsons_telemonitoring" / "parkinsons_updrs.data",
+    PROJECT2_DATA_DIR / "parkinsons+telemonitoring" / "parkinsons_updrs.data",
+)
 
 OUTPUT_DIR = SCRIPT_DIR / "outputs"
 PLOTS_DIR = OUTPUT_DIR / "plots"
@@ -69,6 +74,14 @@ def set_seed(seed: int = RANDOM_SEED) -> None:
 
 def ensure_outputs() -> None:
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def first_existing_path(paths: tuple[Path, ...]) -> Path:
+    for path in paths:
+        if path.exists():
+            return path
+    tried = "\n".join(str(path) for path in paths)
+    raise FileNotFoundError(f"Could not find any of these dataset files:\n{tried}")
 
 
 def parse_auto_mpg(path: Path) -> pd.DataFrame:
@@ -145,7 +158,8 @@ def load_dataset_specs(include_motor: bool) -> dict[str, DatasetSpec]:
     X_auto, y_auto = preprocess_auto_mpg(auto_raw)
 
     X_house, y_house = preprocess_house(HOUSE_PATH)
-    X_total, y_total = preprocess_parkinsons(PARK_PATH, target="total_UPDRS")
+    park_path = first_existing_path(PARK_PATH_CANDIDATES)
+    X_total, y_total = preprocess_parkinsons(park_path, target="total_UPDRS")
 
     specs = {
         "autompg": DatasetSpec("autompg", "Auto MPG", "mpg", X_auto, y_auto),
@@ -154,7 +168,7 @@ def load_dataset_specs(include_motor: bool) -> dict[str, DatasetSpec]:
     }
 
     if include_motor:
-        X_motor, y_motor = preprocess_parkinsons(PARK_PATH, target="motor_UPDRS")
+        X_motor, y_motor = preprocess_parkinsons(park_path, target="motor_UPDRS")
         specs["parkinsons_motor"] = DatasetSpec("parkinsons_motor", "Parkinsons", "motor_UPDRS", X_motor, y_motor)
 
     return specs
@@ -190,13 +204,53 @@ def prepare_dataset(spec: DatasetSpec) -> PreparedData:
 
 
 def resolve_device(name: str) -> torch.device:
-    if name != "auto":
-        return torch.device(name)
+    if name == "cuda":
+        if not torch.cuda.is_available():
+            cuda_runtime = torch.version.cuda or "none"
+            raise RuntimeError(
+                "CUDA was requested, but torch.cuda.is_available() is False. "
+                f"Current PyTorch CUDA runtime: {cuda_runtime}. "
+                "Install a CUDA-enabled PyTorch build, then rerun with --device cuda."
+            )
+        return torch.device("cuda")
+    if name == "mps":
+        if not (getattr(torch.backends, "mps", None) and torch.backends.mps.is_available()):
+            raise RuntimeError("MPS was requested, but it is not available in this PyTorch build.")
+        return torch.device("mps")
+    if name == "cpu":
+        return torch.device("cpu")
     if torch.cuda.is_available():
         return torch.device("cuda")
     if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
         return torch.device("mps")
     return torch.device("cpu")
+
+
+def print_device_status(requested_name: str, resolved_device: torch.device) -> None:
+    print(f"Requested device: {requested_name}")
+    print(f"Using device: {resolved_device}")
+    print(f"PyTorch version: {torch.__version__}")
+
+    if resolved_device.type == "cuda":
+        gpu_name = torch.cuda.get_device_name(0)
+        print(f"CUDA available: True")
+        print(f"CUDA runtime: {torch.version.cuda}")
+        print(f"GPU: {gpu_name}")
+    elif resolved_device.type == "mps":
+        print("MPS available: True")
+    else:
+        print(f"CUDA available: {torch.cuda.is_available()}")
+        print(f"CUDA runtime: {torch.version.cuda or 'none'}")
+        if not torch.cuda.is_available():
+            print("GPU note: PyTorch is currently falling back to CPU. If you expected CUDA, install a CUDA-enabled PyTorch build and run with --device cuda.")
+
+
+def configure_runtime(device: torch.device) -> None:
+    if hasattr(torch, "set_float32_matmul_precision"):
+        torch.set_float32_matmul_precision("high")
+
+    if device.type == "cuda":
+        torch.backends.cudnn.benchmark = True
 
 
 class FourLayerRegressor(nn.Module):
@@ -267,6 +321,7 @@ def train_one_config(
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     loss_fn = nn.MSELoss()
+    use_cuda_loader = device.type == "cuda"
 
     X_train_tensor = torch.tensor(prepared.X_train, dtype=torch.float32)
     y_train_tensor = torch.tensor(prepared.y_train_scaled, dtype=torch.float32)
@@ -278,17 +333,18 @@ def train_one_config(
         train_dataset,
         batch_size=min(batch_size, len(train_dataset)),
         shuffle=True,
+        pin_memory=use_cuda_loader,
     )
 
-    best_state = copy.deepcopy(model.state_dict())
+    best_state = {k: v.clone() for k, v in model.state_dict().items()}
     best_val_loss = float("inf")
     stale_epochs = 0
 
     for _ in range(epochs):
         model.train()
         for xb_cpu, yb_cpu in train_loader:
-            xb = xb_cpu.to(device)
-            yb = yb_cpu.to(device)
+            xb = xb_cpu.to(device, non_blocking=use_cuda_loader)
+            yb = yb_cpu.to(device, non_blocking=use_cuda_loader)
 
             optimizer.zero_grad()
             preds = model(xb)
@@ -303,7 +359,7 @@ def train_one_config(
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            best_state = copy.deepcopy(model.state_dict())
+            best_state = {k: v.clone() for k, v in model.state_dict().items()}
             stale_epochs = 0
         else:
             stale_epochs += 1
@@ -341,12 +397,21 @@ def run_grid_search(
 ) -> dict[str, object]:
     best_trial: dict[str, object] | None = None
 
-    for hidden_pair, activation_name, batch_size, learning_rate in itertools.product(
+    configs = list(itertools.product(
         DEFAULT_HIDDEN_PAIRS,
         DEFAULT_ACTIVATIONS,
         DEFAULT_BATCH_SIZES,
         DEFAULT_LEARNING_RATES,
-    ):
+    ))
+    total_trials = len(configs)
+
+    for i, (hidden_pair, activation_name, batch_size, learning_rate) in enumerate(configs, 1):
+        print(
+            f"  [{prepared.spec.slug}] Trial {i}/{total_trials}: "
+            f"hidden={hidden_pair}, activation={activation_name}, batch={batch_size}, lr={learning_rate}...",
+            end="\r",
+            flush=True,
+        )
         trial = train_one_config(
             prepared=prepared,
             hidden_pair=hidden_pair,
@@ -360,6 +425,8 @@ def run_grid_search(
 
         if best_trial is None or trial["val_metrics"]["rmse"] < best_trial["val_metrics"]["rmse"]:
             best_trial = trial
+    
+    print() # newline after the \r progress line
 
     if best_trial is None:
         raise RuntimeError(f"No trials completed for {prepared.spec.slug}")
@@ -411,7 +478,7 @@ def save_best_plots(prepared: PreparedData, best_trial: dict[str, object]) -> No
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train a PyTorch four-layer regression network on the Project 1 datasets.")
+    parser = argparse.ArgumentParser(description="Train a PyTorch four-layer regression network on the Project 2 datasets.")
     parser.add_argument(
         "--dataset",
         choices=("all", "autompg", "house", "parkinsons_total", "parkinsons_motor"),
@@ -439,7 +506,8 @@ def main() -> None:
     ensure_outputs()
     set_seed()
 
-    specs = load_dataset_specs(include_motor=args.include_motor)
+    include_motor = args.include_motor or args.dataset == "parkinsons_motor"
+    specs = load_dataset_specs(include_motor=include_motor)
     if args.dataset == "all":
         selected_specs = list(specs.values())
     else:
@@ -448,7 +516,8 @@ def main() -> None:
         selected_specs = [specs[args.dataset]]
 
     device = resolve_device(args.device)
-    print(f"Using device: {device}")
+    configure_runtime(device)
+    print_device_status(args.device, device)
 
     metric_rows: list[dict[str, object]] = []
     config_rows: list[dict[str, object]] = []

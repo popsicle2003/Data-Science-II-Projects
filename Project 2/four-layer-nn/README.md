@@ -6,7 +6,7 @@ In the course naming convention, a "4L" network means:
 
 `input -> hidden layer 1 -> hidden layer 2 -> output`
 
-The training script reuses the Project 1 dataset conventions:
+The training script reads from `Project 2/Raw Datasets`:
 
 - Auto MPG, target `mpg`
 - House Price, target `House_Price`
@@ -24,27 +24,44 @@ Outputs are written to `outputs/`:
 Install dependencies:
 
 ```bash
+cd '/mnt/c/Users/legok/Documents/GitHub/Data-Science-II-Projects/Project 2/four-layer-nn'
 pip install -r requirements.txt
 ```
 
-Run the default three-dataset workflow:
+Run all default datasets:
 
 ```bash
 python3 train_4l_nn.py
 ```
 
-Run one dataset only:
+Run Auto MPG only:
 
 ```bash
 python3 train_4l_nn.py --dataset autompg
+```
+
+Run House Price only:
+
+```bash
 python3 train_4l_nn.py --dataset house
+```
+
+Run Parkinsons `total_UPDRS` only:
+
+```bash
 python3 train_4l_nn.py --dataset parkinsons_total
 ```
 
-Include the extra Parkinsons `motor_UPDRS` target:
+Run Parkinsons `motor_UPDRS` only:
+
+```bash
+python3 train_4l_nn.py --dataset parkinsons_motor
+```
+
+Run both Parkinsons targets:
 
 ```bash
 python3 train_4l_nn.py --include-motor
 ```
 
-If your instructor wants California Housing instead of the Project 1 house dataset, swap the house loader in `train_4l_nn.py` and keep the rest of the pipeline the same.
+If your instructor wants California Housing instead of the current house dataset, swap the house loader in `train_4l_nn.py` and keep the rest of the pipeline the same.
